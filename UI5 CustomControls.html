@@ -1,0 +1,1252 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>UI5 Custom Controls</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a vertical run of numbered scenes, each a headline column beside a live "stage" diagram */
+:root {
+  --bg: #f1f2f7;
+  --surface: #ffffff;
+  --sunken: #e7e9f1;
+  --ink: #151a2d;
+  --muted: #586079;
+  --line: #d6d9e4;
+  --accent: #2c56e0;
+  --accent-soft: #e2e8fc;
+  --star: #df970a;
+  --star-off: #c9ccd8;
+  --c-meta: #2c56e0;
+  --c-hook: #0b8a77;
+  --c-event: #c63a6c;
+  --c-render: #6f46cf;
+  --c-warn: #a85200;
+  --code-bg: #161b2e;
+  --code-line: #262d45;
+  --code-ink: #dfe3f1;
+  --code-dim: #7d859f;
+  --code-hi: #2a3358;
+  --t-kw: #ff9cc2; --t-str: #a3e2ab; --t-fn: #93b9ff; --t-key: #f1c97c; --t-num: #f6a86c; --t-tag: #93b9ff;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f121b; --surface: #171b27; --sunken: #1e2332; --ink: #e8eaf3; --muted: #9ba2ba; --line: #2b3145;
+    --accent: #7f9cff; --accent-soft: #232c4d; --star: #f3b847; --star-off: #3c4258;
+    --c-meta: #7f9cff; --c-hook: #3fcbb3; --c-event: #f27ba3; --c-render: #ab8eff; --c-warn: #f0a050;
+    --code-bg: #0a0d16; --code-line: #20263a; --code-hi: #222b4c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f121b; --surface: #171b27; --sunken: #1e2332; --ink: #e8eaf3; --muted: #9ba2ba; --line: #2b3145;
+  --accent: #7f9cff; --accent-soft: #232c4d; --star: #f3b847; --star-off: #3c4258;
+  --c-meta: #7f9cff; --c-hook: #3fcbb3; --c-event: #f27ba3; --c-render: #ab8eff; --c-warn: #f0a050;
+  --code-bg: #0a0d16; --code-line: #20263a; --code-hi: #222b4c;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
+p { margin: 0; }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- top bar ---------- */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.bar-in {
+  max-width: 1200px; margin: 0 auto;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 18px;
+}
+.brand { font-family: var(--f-display); font-weight: 800; white-space: nowrap; font-size: 15px; }
+.brand span { color: var(--star); }
+.nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a {
+  font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap;
+  padding: 5px 10px; border-radius: 999px;
+}
+.nav a:hover { color: var(--ink); background: var(--sunken); }
+.nav a.on { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.keys { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.keys kbd { font-family: var(--f-mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+.progress { height: 3px; background: var(--accent); width: 0; transition: width .15s linear; }
+@media (max-width: 760px) { .keys { display: none; } }
+
+/* ---------- scenes ---------- */
+.wrap {
+  max-width: 1200px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.scene { padding-block: 72px; border-bottom: 1px solid var(--line); scroll-margin-top: 56px; }
+.scene:last-of-type { border-bottom: 0; }
+.eyebrow {
+  font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--accent); display: flex; gap: 10px; align-items: center;
+}
+.eyebrow b { color: var(--muted); font-weight: 400; }
+.scene h2 { font-size: clamp(28px, 3.6vw, 42px); line-height: 1.08; margin-top: 10px; }
+.lede { color: var(--muted); font-size: 17px; max-width: 62ch; margin-top: 14px; }
+.grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: start; margin-top: 36px; }
+.grid > * { min-width: 0; }
+@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+.stage {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 22px; position: relative;
+}
+.points { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.points li { display: grid; grid-template-columns: 26px minmax(0,1fr); gap: 10px; align-items: start; }
+.points .dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--surface); background: var(--muted); margin-top: 1px; }
+.points strong { display: block; }
+.points span.t { color: var(--muted); font-size: 15px; }
+
+.btn {
+  font: 600 14px var(--f-body); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.primary:hover { filter: brightness(1.08); color: var(--surface); }
+.btn[disabled] { opacity: .45; cursor: default; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.tag { font: 600 11px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; }
+.k-meta { color: var(--c-meta); } .k-hook { color: var(--c-hook); } .k-event { color: var(--c-event); }
+.k-render { color: var(--c-render); } .k-api { color: var(--muted); } .k-warn { color: var(--c-warn); } .k-ctrl { color: var(--star); }
+
+/* ---------- code ---------- */
+.code {
+  background: var(--code-bg); color: var(--code-ink); border-radius: var(--radius);
+  font: 13px/1.62 var(--f-mono); margin: 0; padding: 14px 0; overflow-x: auto; white-space: pre;
+  border: 1px solid var(--code-line);
+}
+.code .ln { display: block; padding: 0 16px 0 0; transition: background .25s, opacity .25s; border-left: 3px solid transparent; }
+.code .lno { display: inline-block; width: 38px; text-align: right; padding-right: 14px; color: var(--code-dim); user-select: none; }
+.code.dimmable.focus .ln { opacity: .38; }
+.code.dimmable.focus .ln.hi { opacity: 1; background: var(--code-hi); border-left-color: var(--hl, var(--accent)); }
+.code-title { font: 12px var(--f-mono); color: var(--muted); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+.t-kw { color: var(--t-kw); } .t-str { color: var(--t-str); } .t-fn { color: var(--t-fn); }
+.t-key { color: var(--t-key); } .t-num { color: var(--t-num); } .t-com { color: var(--code-dim); font-style: italic; }
+.t-tag { color: var(--t-tag); } .t-attr { color: var(--t-key); }
+
+/* ---------- 00 hero ---------- */
+.hero { padding-block: 64px 72px; }
+.hero h1 { font-size: clamp(38px, 6vw, 72px); line-height: 1; font-weight: 800; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { font-size: 19px; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.chip { font-size: 13px; padding: 5px 11px; border-radius: 999px; background: var(--sunken); color: var(--muted); }
+.flow { display: grid; gap: 0; justify-items: stretch; }
+.flow .node { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.flow .node h3 { font-family: var(--f-mono); font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; letter-spacing: 0; }
+.flow .node.js { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.parts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.part { border-radius: 7px; padding: 8px 10px; font-size: 13px; background: var(--sunken); border-top: 3px solid; }
+.part b { display: block; font-size: 14px; }
+.part span { color: var(--muted); font-size: 12.5px; }
+@media (max-width: 480px) { .parts { grid-template-columns: minmax(0,1fr); } }
+.pipe { height: 46px; position: relative; display: flex; justify-content: center; }
+.pipe::before { content: ""; width: 2px; background: repeating-linear-gradient(var(--line) 0 5px, transparent 5px 9px); }
+.pipe i {
+  position: absolute; top: 0; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%;
+  background: var(--accent); animation: drip 2.4s infinite cubic-bezier(.5,0,.5,1);
+}
+.pipe.p2 i { background: var(--c-render); animation-delay: 1.2s; }
+.pipe em { position: absolute; left: calc(50% + 14px); top: 13px; font: 12px var(--f-mono); color: var(--muted); font-style: normal; }
+@keyframes drip { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(36px); opacity: 0; } }
+.stars { display: inline-flex; gap: 4px; font-size: 30px; line-height: 1; user-select: none; }
+.stars span { color: var(--star-off); transition: color .2s, transform .2s; }
+.stars span.on { color: var(--star); }
+.hero .stars span { animation: starpop 4.8s infinite; }
+.hero .stars span:nth-child(1) { animation-delay: .6s; } .hero .stars span:nth-child(2) { animation-delay: .8s; } .hero .stars span:nth-child(3) { animation-delay: 1s; }
+.hero .stars span:nth-child(4) { animation-delay: 1.2s; } .hero .stars span:nth-child(5) { animation-delay: 1.4s; }
+@keyframes starpop { 0%, 6% { transform: scale(1); } 3% { transform: scale(1.35); } }
+
+/* ---------- 01 why ---------- */
+.options { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-top: 36px; }
+@media (max-width: 860px) { .options { grid-template-columns: minmax(0,1fr); } }
+.opt { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; gap: 10px; align-content: start; }
+.opt.pick { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.opt h3 { font-size: 20px; }
+.opt .when { font-size: 14px; color: var(--muted); }
+.opt ul { margin: 0; padding-left: 18px; font-size: 14.5px; display: grid; gap: 4px; }
+.opt .label { font: 600 11px var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.mini { height: 74px; border-radius: 8px; background: var(--sunken); position: relative; overflow: hidden; }
+.mini .blk { position: absolute; border-radius: 5px; font: 600 11px var(--f-mono); display: grid; place-items: center; color: var(--surface); }
+.m-frag .blk { width: 56px; height: 28px; background: var(--muted); top: 23px; animation: copy 3.6s infinite ease-in-out; }
+.m-frag .blk:nth-child(1) { left: 16px; animation: none; }
+.m-frag .blk:nth-child(2) { left: 16px; }
+.m-frag .blk:nth-child(3) { left: 16px; animation-delay: .4s; }
+@keyframes copy { 0%, 15% { transform: translateX(0); } 45%, 85% { transform: translateX(var(--dx)); } 100% { transform: translateX(0); } }
+.m-ext .blk.base { left: 50%; margin-left: -50px; top: 23px; width: 100px; height: 28px; background: var(--muted); }
+.m-ext .blk.plus { left: 50%; margin-left: 30px; top: 12px; width: 34px; height: 20px; background: var(--c-event); animation: plug 3s infinite ease-in-out; }
+@keyframes plug { 0%, 20% { transform: translate(30px, -20px); opacity: 0; } 50%, 85% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(0,0); opacity: 0; } }
+.m-new .blk { background: var(--accent); width: 30px; height: 24px; top: 25px; animation: build 3.6s infinite ease-in-out; }
+.m-new .blk:nth-child(1) { left: calc(50% - 50px); } .m-new .blk:nth-child(2) { left: calc(50% - 15px); animation-delay: .25s; background: var(--c-render); }
+.m-new .blk:nth-child(3) { left: calc(50% + 20px); animation-delay: .5s; background: var(--c-hook); }
+@keyframes build { 0% { transform: translateY(-40px); opacity: 0; } 25%, 85% { transform: translateY(0); opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- 02 family ---------- */
+.ladder { display: grid; gap: 0; }
+.rung { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 14px; align-items: stretch; }
+.rail { display: flex; flex-direction: column; align-items: center; }
+.rail .knot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); margin-top: 18px; transition: all .3s; flex: none; }
+.rail .wire { width: 2px; flex: 1; background: var(--line); }
+.rung:last-child .rail .wire { display: none; }
+.rung .box { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; background: var(--surface); transition: all .3s; }
+.rung .box .cls { font: 600 14px var(--f-mono); word-break: break-word; }
+.rung .box .adds { font-size: 14px; color: var(--muted); }
+.rung.lit .knot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+.rung.lit .box { border-color: var(--accent); transform: translateX(4px); }
+.rung.you .box { background: var(--accent-soft); border-style: dashed; border-color: var(--accent); }
+.rung.you .cls { color: var(--accent); }
+
+/* ---------- 03 anatomy ---------- */
+.segs { display: grid; gap: 10px; }
+.seg {
+  text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; display: grid; gap: 4px; border-left: 4px solid var(--c);
+  transition: transform .2s, box-shadow .2s;
+}
+.seg:hover { transform: translateX(3px); }
+.seg.on { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent); transform: translateX(6px); }
+.seg b { font-family: var(--f-display); font-size: 18px; }
+.seg span { color: var(--muted); font-size: 14.5px; }
+.autoplay { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+
+/* ---------- 04 api ---------- */
+.kinds { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.kind { font: 600 14px var(--f-body); cursor: pointer; border-radius: 999px; padding: 7px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.kind.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.gen { display: grid; grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr); gap: 0; align-items: center; }
+@media (max-width: 640px) { .gen { grid-template-columns: minmax(0,1fr); } .gen .arrow { transform: rotate(90deg); height: 44px; } }
+.gen .arrow { display: grid; place-items: center; color: var(--accent); font-size: 26px; }
+.gen .arrow span { animation: nudge 1.4s infinite ease-in-out; }
+@keyframes nudge { 50% { transform: translateX(6px); } }
+.methods { display: grid; gap: 6px; }
+.m {
+  font: 13px var(--f-mono); padding: 7px 10px; border-radius: 6px; background: var(--sunken);
+  border-left: 3px solid var(--c-meta); animation: mIn .45s both cubic-bezier(.2,.8,.3,1.2);
+  overflow-wrap: anywhere;
+}
+.m small { display: block; font-family: var(--f-body); color: var(--muted); font-size: 12.5px; }
+@keyframes mIn { from { opacity: 0; transform: translateX(-18px) scale(.96); } }
+.api-note { margin-top: 16px; font-size: 14.5px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 12px; }
+
+/* ---------- 05 lifecycle ---------- */
+.track { display: flex; flex-wrap: wrap; gap: 8px 0; align-items: center; }
+.step {
+  display: flex; align-items: center;
+}
+.step button {
+  font: 600 13px var(--f-mono); cursor: pointer; padding: 8px 11px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted); transition: all .25s;
+}
+.step + .step::before { content: ""; width: 16px; height: 2px; background: var(--line); }
+.step.done button { color: var(--ink); border-color: color-mix(in srgb, var(--kc) 50%, var(--line)); }
+.step.now button { background: var(--kc); color: var(--surface); border-color: var(--kc); transform: translateY(-2px); box-shadow: 0 6px 16px -6px var(--kc); }
+.lc-detail { margin-top: 22px; display: grid; gap: 12px; min-height: 196px; }
+.lc-detail h3 { font-size: 26px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.lc-detail p { color: var(--muted); max-width: 64ch; }
+.lc-detail .code { padding: 12px 0; }
+.loopnote { font: 12px var(--f-mono); color: var(--c-event); display: inline-flex; gap: 6px; align-items: center; }
+.loopnote[hidden] { display: none !important; }
+.loopnote i { display: inline-block; animation: spin 1.6s linear infinite; font-style: normal; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.fade { animation: fade .4s both; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 16px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 6px; vertical-align: -1px; }
+
+/* ---------- 06 renderer ---------- */
+.rgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 760px) { .rgrid { grid-template-columns: minmax(0,1fr); } }
+.dom-out { background: var(--sunken); border-radius: var(--radius); padding: 14px 16px; font: 13px/1.7 var(--f-mono); white-space: pre; overflow-x: auto; min-height: 220px; color: var(--ink); }
+.dom-out .new { background: color-mix(in srgb, var(--c-render) 22%, transparent); border-radius: 3px; animation: fade .35s both; }
+.dom-out .d-tag { color: var(--c-meta); } .dom-out .d-attr { color: var(--c-render); }
+.preview { margin-top: 12px; display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1px dashed var(--line); border-radius: var(--radius); min-height: 62px; }
+.preview .label { font: 12px var(--f-mono); color: var(--muted); }
+.preview .stars span { animation: fade .3s both; }
+.rnote { font-size: 15px; color: var(--muted); margin-top: 14px; min-height: 48px; }
+.rnote b { color: var(--ink); }
+
+/* ---------- 07 live ---------- */
+.live { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 16px; margin-top: 36px; }
+@media (max-width: 920px) { .live { grid-template-columns: minmax(0,1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel h3 { font: 600 12px var(--f-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.host { min-height: 92px; border-radius: 8px; background: var(--sunken); display: grid; place-items: center; position: relative; transition: box-shadow .3s; }
+.host .stars { font-size: 38px; }
+.host .stars span { cursor: pointer; }
+.host .stars span:hover { transform: scale(1.18); }
+.host.flash { animation: flash .6s; }
+@keyframes flash { 0% { box-shadow: inset 0 0 0 3px var(--c-render); } 100% { box-shadow: inset 0 0 0 0 transparent; } }
+.host .gone { font: 13px var(--f-mono); color: var(--muted); }
+.stale { position: absolute; top: 8px; right: 8px; font: 600 11px var(--f-mono); color: var(--c-warn); border: 1px solid currentColor; border-radius: 4px; padding: 1px 6px; text-transform: uppercase; }
+.toast { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--surface); font-size: 13px; padding: 4px 12px; border-radius: 999px; white-space: nowrap; animation: toast 2.2s both; }
+@keyframes toast { 0% { opacity: 0; transform: translate(-50%, 6px); } 12%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
+.inspector { display: grid; gap: 8px; }
+.prop { display: grid; grid-template-columns: 90px minmax(0,1fr); align-items: center; gap: 10px; font-size: 14px; }
+.prop label { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; width: max-content; }
+.stepper button { border: 0; background: var(--sunken); color: var(--ink); font: 600 16px var(--f-mono); width: 34px; height: 32px; cursor: pointer; }
+.stepper output { min-width: 40px; text-align: center; font: 600 14px var(--f-mono); font-variant-numeric: tabular-nums; }
+select { font: 14px var(--f-mono); padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: max-content; }
+.switch { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); cursor: pointer; }
+.switch input { margin-top: 3px; accent-color: var(--c-warn); }
+.switch code { color: var(--ink); }
+.log { background: var(--code-bg); border-radius: 8px; padding: 10px 0; font: 12.5px/1.5 var(--f-mono); height: 330px; overflow-y: auto; color: var(--code-ink); }
+.log .e { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 8px; padding: 3px 12px; animation: logIn .3s both; }
+.log .e .tag { justify-self: start; font-size: 10px; padding: 1px 5px; }
+.log .e.sep { border-top: 1px dashed var(--code-line); margin-top: 6px; padding-top: 8px; }
+.log .k-api { color: var(--code-dim); }
+@keyframes logIn { from { opacity: 0; transform: translateX(-8px); } }
+.log .msg { overflow-wrap: anywhere; }
+.domlive { font: 12px/1.6 var(--f-mono); background: var(--sunken); border-radius: 8px; padding: 10px 12px; white-space: pre; overflow-x: auto; color: var(--ink); }
+.try { font-size: 14px; color: var(--muted); display: grid; gap: 4px; }
+.try b { color: var(--ink); }
+
+/* ---------- 08 extend ---------- */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.tab { font: 600 14px var(--f-body); padding: 8px 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.tab.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.viz { height: 150px; border-radius: var(--radius); background: var(--sunken); position: relative; overflow: hidden; margin-bottom: 14px; }
+.viz .box { position: absolute; border-radius: 8px; font: 600 12px var(--f-mono); display: grid; place-items: center; text-align: center; padding: 4px; }
+.v-ext .base { left: 50%; top: 50%; width: 180px; height: 52px; margin: -26px 0 0 -90px; background: var(--surface); border: 2px solid var(--muted); color: var(--ink); }
+.v-ext .add { left: 50%; top: 50%; width: 92px; height: 30px; margin: -58px 0 0 40px; background: var(--c-event); color: var(--surface); animation: plug2 2.8s infinite ease-in-out; }
+.v-ext .add2 { left: 50%; top: 50%; width: 120px; height: 26px; margin: 34px 0 0 -60px; color: var(--muted); font-weight: 400; }
+@keyframes plug2 { 0%, 15% { transform: translate(40px, -30px); opacity: 0; } 45%, 85% { transform: none; opacity: 1; } 100% { opacity: 0; } }
+.v-comp .outer { left: 50%; top: 50%; width: 280px; max-width: calc(100% - 24px); height: 110px; transform: translate(-50%, -50%); border: 2px dashed var(--accent); color: var(--accent); align-items: start; padding-top: 6px; }
+.v-comp .kid { top: 50%; height: 40px; margin-top: -8px; background: var(--surface); border: 2px solid var(--muted); color: var(--ink); animation: drop 3.2s infinite ease-in-out; }
+.v-comp .kid.a { left: calc(50% - 124px); width: 100px; }
+.v-comp .kid.b { left: calc(50% - 14px); width: 138px; animation-delay: .35s; }
+@media (max-width: 420px) { .v-comp .kid.a { left: 18px; width: 90px; } .v-comp .kid.b { left: auto; right: 18px; width: 120px; } }
+@keyframes drop { 0%, 10% { transform: translateY(-70px); opacity: 0; } 40%, 85% { transform: none; opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- 09 use ---------- */
+.map { display: grid; gap: 10px; }
+.mapline { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 10px; align-items: center; font: 13px var(--f-mono); }
+.mapline > span { background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; overflow-wrap: anywhere; }
+.mapline > i { color: var(--accent); font-style: normal; animation: nudge 1.4s infinite ease-in-out; }
+.mapline .hl { color: var(--accent); font-weight: 600; }
+.tree { font: 13px/1.8 var(--f-mono); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; white-space: pre; overflow-x: auto; color: var(--muted); }
+.tree b { color: var(--accent); }
+
+/* ---------- 10 rules ---------- */
+.rules { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-top: 36px; }
+@media (max-width: 760px) { .rules { grid-template-columns: minmax(0,1fr); } }
+.rules .panel h3 { font-size: 13px; }
+.rules ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.rules li { display: grid; grid-template-columns: 22px minmax(0,1fr); gap: 8px; font-size: 15px; }
+.rules li::before { font-weight: 700; }
+.rules .do li::before { content: "✓"; color: var(--c-hook); }
+.rules .dont li::before { content: "✕"; color: var(--c-event); }
+.rules li span { color: var(--muted); display: block; font-size: 14px; }
+.foot { padding-block: 40px 60px; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand">Custom Controls <span>★</span></div>
+    <nav class="nav" id="nav">
+      <a href="#why">Why</a><a href="#family">Base classes</a><a href="#anatomy">Anatomy</a><a href="#api">Metadata</a>
+      <a href="#lifecycle">Lifecycle</a><a href="#renderer">Renderer</a><a href="#live">Live demo</a>
+      <a href="#extend">Extend &amp; compose</a><a href="#use">Use it</a><a href="#rules">Checklist</a>
+    </nav>
+    <div class="keys"><kbd>←</kbd> <kbd>→</kbd> scene</div>
+  </div>
+  <div class="progress" id="progress"></div>
+</header>
+
+<main class="wrap">
+
+<!-- 00 HERO -->
+<section class="scene hero" id="intro">
+  <div class="grid" style="margin-top:0; align-items:center">
+    <div>
+      <div class="eyebrow">SAPUI5 · Dev team session</div>
+      <h1 style="margin-top:14px">Build your own <em>UI5 control</em></h1>
+      <p class="lede">A custom control is a JavaScript class that UI5 treats like any built-in control. You declare its API, describe how it renders, and add behaviour. In return you get binding, events, lifecycle and XML support for free.</p>
+      <div class="hero-meta">
+        <span class="chip">Running example: <b>demo.control.Rating</b></span>
+        <span class="chip">Renderer apiVersion 2</span>
+        <span class="chip">~20 min</span>
+      </div>
+    </div>
+    <div class="flow" aria-label="From an XML tag to DOM">
+      <div class="node">
+        <h3>Main.view.xml</h3>
+        <div class="mono" style="font-size:14px"><span style="color:var(--c-meta)">&lt;custom:Rating</span> value=<span style="color:var(--c-hook)">"{/score}"</span> change=<span style="color:var(--c-hook)">".onRate"</span><span style="color:var(--c-meta)">/&gt;</span></div>
+      </div>
+      <div class="pipe"><i></i><em>UI5 creates an instance</em></div>
+      <div class="node js">
+        <h3>demo/control/Rating.js</h3>
+        <div class="parts">
+          <div class="part" style="border-color:var(--c-meta)"><b>metadata</b><span>properties, aggregations, events</span></div>
+          <div class="part" style="border-color:var(--c-hook)"><b>behaviour</b><span>hooks &amp; event handlers</span></div>
+          <div class="part" style="border-color:var(--c-render)"><b>renderer</b><span>state → DOM</span></div>
+        </div>
+      </div>
+      <div class="pipe p2"><i></i><em>RenderManager writes DOM</em></div>
+      <div class="node">
+        <h3>DOM in the browser</h3>
+        <div class="stars" aria-label="3 of 5 stars"><span class="on">★</span><span class="on">★</span><span class="on">★</span><span>★</span><span>★</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 WHY -->
+<section class="scene" id="why">
+  <div class="eyebrow">Scene 01 <b>/ When do I need one?</b></div>
+  <h2>Pick the lightest tool that does the job</h2>
+  <p class="lede">Not every reusable piece of UI needs to be a control. A real custom control earns its place when you need an API: properties people bind to, events they listen to, and rendering you own.</p>
+  <div class="options">
+    <div class="opt">
+      <div class="mini m-frag" aria-hidden="true"><div class="blk">xml</div><div class="blk" style="--dx:80px">xml</div><div class="blk" style="--dx:160px">xml</div></div>
+      <span class="label">Lightest</span>
+      <h3>XML Fragment</h3>
+      <p class="when">Reuse a block of existing controls in several views.</p>
+      <ul><li>No new class, no API</li><li>Logic stays in the controller</li><li>Great for dialogs and forms</li></ul>
+    </div>
+    <div class="opt">
+      <div class="mini m-ext" aria-hidden="true"><div class="blk base">sap.m.Button</div><div class="blk plus">+evt</div></div>
+      <span class="label">Medium</span>
+      <h3>Extend a control</h3>
+      <p class="when">A standard control is 90% right and needs one more property, event or tweak.</p>
+      <ul><li><code>Button.extend(…)</code></li><li>Reuse the parent renderer</li><li>Inherits all parent API</li></ul>
+    </div>
+    <div class="opt pick">
+      <div class="mini m-new" aria-hidden="true"><div class="blk"></div><div class="blk"></div><div class="blk"></div></div>
+      <span class="label" style="color:var(--accent)">Today's focus</span>
+      <h3>New control</h3>
+      <p class="when">Nothing in the library fits, or you want to bundle several controls behind one API.</p>
+      <ul><li><code>Control.extend(…)</code></li><li>You own metadata, renderer and behaviour</li><li>Can compose other controls inside</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- 02 FAMILY -->
+<section class="scene" id="family">
+  <div class="eyebrow">Scene 02 <b>/ Where it sits</b></div>
+  <div class="grid">
+    <div>
+      <h2>Every control inherits a stack of features</h2>
+      <p class="lede">When you call <code>Control.extend</code>, your class lands at the bottom of this chain. Each ancestor adds one capability, so you don't write any of it yourself.</p>
+      <div class="row" style="margin-top:22px"><button class="btn primary" id="traceBtn">▶ Trace inheritance</button></div>
+    </div>
+    <div class="stage">
+      <div class="ladder" id="ladder">
+        <div class="rung"><div class="rail"><div class="knot"></div><div class="wire"></div></div><div class="box"><div class="cls">sap.ui.base.Object</div><div class="adds">The root: <code>extend()</code> and class metadata</div></div></div>
+        <div class="rung"><div class="rail"><div class="knot"></div><div class="wire"></div></div><div class="box"><div class="cls">sap.ui.base.EventProvider</div><div class="adds"><code>attachEvent</code>, <code>fireEvent</code>, listener registry</div></div></div>
+        <div class="rung"><div class="rail"><div class="knot"></div><div class="wire"></div></div><div class="box"><div class="cls">sap.ui.base.ManagedObject</div><div class="adds">Properties, aggregations, associations, data binding, models</div></div></div>
+        <div class="rung"><div class="rail"><div class="knot"></div><div class="wire"></div></div><div class="box"><div class="cls">sap.ui.core.Element</div><div class="adds">Belongs to the UI tree: IDs, tooltips, custom data, browser event delegation</div></div></div>
+        <div class="rung"><div class="rail"><div class="knot"></div><div class="wire"></div></div><div class="box"><div class="cls">sap.ui.core.Control</div><div class="adds">Has a renderer and its own DOM: <code>placeAt</code>, <code>invalidate</code>, <code>visible</code>, busy state</div></div></div>
+        <div class="rung you"><div class="rail"><div class="knot"></div><div class="wire"></div></div><div class="box"><div class="cls">demo.control.Rating</div><div class="adds">Only what's unique: stars, a value, a change event</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 ANATOMY -->
+<section class="scene" id="anatomy">
+  <div class="eyebrow">Scene 03 <b>/ Anatomy of a control file</b></div>
+  <h2>One file, four parts</h2>
+  <p class="lede">This is the complete Rating control. Click a part to see where it lives in the code.</p>
+  <div class="grid">
+    <div class="segs" id="segs">
+      <button class="seg" style="--c:var(--muted)" data-seg="module"><b>Module &amp; class name</b><span><code>sap.ui.define</code> loads dependencies. <code>Control.extend</code> gets a fully qualified name that matches the file path.</span></button>
+      <button class="seg" style="--c:var(--c-meta)" data-seg="metadata"><b>metadata</b><span>The public contract. UI5 reads it and generates getters, setters and event methods for you.</span></button>
+      <button class="seg" style="--c:var(--c-hook)" data-seg="init"><b>Lifecycle hooks</b><span><code>init</code>, <code>onBeforeRendering</code>, <code>onAfterRendering</code>, <code>exit</code>. Optional, called by the framework.</span></button>
+      <button class="seg" style="--c:var(--c-event)" data-seg="ontap"><b>Event handlers</b><span>Methods named <code>on</code> + browser event (<code>ontap</code>, <code>onkeydown</code>) are called automatically.</span></button>
+      <button class="seg" style="--c:var(--c-render)" data-seg="renderer"><b>renderer</b><span>A pure function from control state to DOM, written with the RenderManager.</span></button>
+      <label class="autoplay"><input type="checkbox" id="anaAuto" checked> Cycle through parts automatically</label>
+    </div>
+    <div>
+      <div class="code-title"><span class="tag k-meta">js</span> webapp/control/Rating.js</div>
+      <pre class="code dimmable" id="anaCode"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- 04 API -->
+<section class="scene" id="api">
+  <div class="eyebrow">Scene 04 <b>/ Metadata becomes API</b></div>
+  <div class="grid">
+    <div>
+      <h2>Declare it once, get the methods for free</h2>
+      <p class="lede">Each entry in <code>metadata</code> is turned into named methods on your class when <code>extend</code> runs. Pick a kind to see what UI5 generates.</p>
+      <ul class="points" style="margin-top:24px">
+        <li><span class="dot" style="background:var(--c-meta)">P</span><div><strong>properties</strong><span class="t">Simple values with a type and default. Bindable.</span></div></li>
+        <li><span class="dot" style="background:var(--c-render)">A</span><div><strong>aggregations</strong><span class="t">Child controls this control owns and renders.</span></div></li>
+        <li><span class="dot" style="background:var(--c-hook)">S</span><div><strong>associations</strong><span class="t">References to controls by ID, without owning them.</span></div></li>
+        <li><span class="dot" style="background:var(--c-event)">E</span><div><strong>events</strong><span class="t">Things that happened, which apps can listen to.</span></div></li>
+      </ul>
+    </div>
+    <div class="stage">
+      <div class="kinds" id="kinds">
+        <button class="kind on" data-k="prop">property</button>
+        <button class="kind" data-k="agg">aggregation</button>
+        <button class="kind" data-k="assoc">association</button>
+        <button class="kind" data-k="event">event</button>
+      </div>
+      <div class="gen">
+        <pre class="code" id="apiCode" style="font-size:12.5px"></pre>
+        <div class="arrow" aria-hidden="true"><span>➜</span></div>
+        <div class="methods" id="apiMethods"></div>
+      </div>
+      <p class="api-note" id="apiNote"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 LIFECYCLE -->
+<section class="scene" id="lifecycle">
+  <div class="eyebrow">Scene 05 <b>/ Lifecycle</b></div>
+  <h2>What happens, and when</h2>
+  <p class="lede">Press play to follow one Rating control from creation to destruction, including the re-render loop that runs every time a property changes.</p>
+  <div class="stage" style="margin-top:32px">
+    <div class="row" style="justify-content:space-between; margin-bottom:18px">
+      <div class="row">
+        <button class="btn primary" id="lcPlay">▶ Play</button>
+        <button class="btn" id="lcPrev" aria-label="Previous step">←</button>
+        <button class="btn" id="lcNext" aria-label="Next step">→</button>
+      </div>
+      <span class="loopnote" id="lcLoop" hidden><i>↻</i> re-render pass</span>
+    </div>
+    <div class="track" id="lcTrack"></div>
+    <div class="lc-detail" id="lcDetail"></div>
+    <div class="legend">
+      <span style="--c:var(--muted)">framework call</span>
+      <span style="--c:var(--c-hook)">hook you can implement</span>
+      <span style="--c:var(--c-render)">renderer</span>
+      <span style="--c:var(--c-event)">user interaction</span>
+    </div>
+  </div>
+</section>
+
+<!-- 06 RENDERER -->
+<section class="scene" id="renderer">
+  <div class="eyebrow">Scene 06 <b>/ The renderer</b></div>
+  <div class="grid">
+    <div>
+      <h2>Watch the RenderManager build the DOM</h2>
+      <p class="lede">With <code>apiVersion: 2</code> you describe elements with <code>openStart</code>, <code>class</code>, <code>attr</code>, <code>openEnd</code>, <code>text</code> and <code>close</code>. Step through one render of <code>value = 3</code>, <code>maxValue = 5</code>.</p>
+      <div class="row" style="margin-top:22px">
+        <button class="btn primary" id="rStep">Next call →</button>
+        <button class="btn" id="rAuto">▶ Auto</button>
+        <button class="btn" id="rReset">Reset</button>
+      </div>
+      <p class="rnote" id="rNote"></p>
+    </div>
+    <div>
+      <div class="rgrid">
+        <div style="min-width:0">
+          <div class="code-title"><span class="tag k-render">renderer</span> render(oRm, oControl)</div>
+          <pre class="code dimmable" id="rCode" style="--hl:var(--c-render); font-size:12px"></pre>
+        </div>
+        <div style="min-width:0">
+          <div class="code-title"><span class="tag k-meta">dom</span> generated output</div>
+          <div class="dom-out" id="rDom"></div>
+        </div>
+      </div>
+      <div class="preview"><span class="label">preview</span><div class="stars" id="rPrev"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 LIVE -->
+<section class="scene" id="live">
+  <div class="eyebrow">Scene 07 <b>/ Live demo</b></div>
+  <h2>Poke the control and watch the framework react</h2>
+  <p class="lede">This is a small simulation of the UI5 runtime running our Rating control. Every click is traced in the log in the order UI5 would do it.</p>
+  <div class="live">
+    <div class="panel">
+      <h3>Rendered control <button class="btn" id="dToggle" style="font-size:12px; padding:5px 10px">destroy()</button></h3>
+      <div class="host" id="dHost"></div>
+      <h3>Properties</h3>
+      <div class="inspector">
+        <div class="prop"><label for="dValOut">value</label>
+          <div class="stepper"><button id="dMinus" aria-label="Decrease value">−</button><output id="dValOut">3</output><button id="dPlus" aria-label="Increase value">+</button></div></div>
+        <div class="prop"><label for="dMax">maxValue</label>
+          <select id="dMax"><option>3</option><option selected>5</option><option>7</option><option>10</option></select></div>
+      </div>
+      <label class="switch"><input type="checkbox" id="dSuppress"> <span>Setter uses <code>setProperty("value", v, true)</code>, which suppresses invalidation. Try it to see stale DOM.</span></label>
+      <h3>Current DOM</h3>
+      <div class="domlive" id="dDom"></div>
+      <div class="try">
+        <span><b>Try:</b> click a star, then press + twice quickly.</span>
+        <span>Notice <code>fireChange</code> runs before the re-render, and two quick changes cause only one render.</span>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Framework trace <button class="btn" id="dClear" style="font-size:12px; padding:5px 10px">Clear</button></h3>
+      <div class="log" id="dLog" aria-live="polite"></div>
+      <div class="legend" style="margin-top:0">
+        <span style="--c:var(--muted)">API call</span><span style="--c:var(--c-hook)">hook</span><span style="--c:var(--c-render)">render</span>
+        <span style="--c:var(--c-event)">event</span><span style="--c:var(--star)">controller</span><span style="--c:var(--c-warn)">warning</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 EXTEND -->
+<section class="scene" id="extend">
+  <div class="eyebrow">Scene 08 <b>/ Two more patterns</b></div>
+  <div class="grid">
+    <div>
+      <h2>Extend what exists, or compose from parts</h2>
+      <p class="lede">Most real-world custom controls are one of these two. Extending keeps the parent's look and adds API. Composing hides several controls behind one clean API.</p>
+      <ul class="points" style="margin-top:24px">
+        <li><span class="dot" style="background:var(--c-event)">1</span><div><strong>Extension</strong><span class="t">Reuse the parent renderer. Add metadata and handlers on top. Call the parent with <code>Button.prototype.onAfterRendering.apply(this, arguments)</code> when you override a hook it implements.</span></div></li>
+        <li><span class="dot" style="background:var(--accent)">2</span><div><strong>Composite</strong><span class="t">Create children in <code>init</code> and store them in <em>hidden</em> aggregations, so they are destroyed with the parent and rendered with <code>oRm.renderControl</code>.</span></div></li>
+      </ul>
+    </div>
+    <div class="stage">
+      <div class="tabs" id="exTabs">
+        <button class="tab on" data-t="ext">HoverButton (extend)</button>
+        <button class="tab" data-t="comp">LabeledInput (composite)</button>
+      </div>
+      <div class="viz v-ext" id="vExt"><div class="box base">sap.m.Button</div><div class="box add">event: hover</div><div class="box add2">same renderer, more API</div></div>
+      <div class="viz v-comp" id="vComp" hidden><div class="box outer">demo.control.LabeledInput</div><div class="box kid a">sap.m.Label</div><div class="box kid b">sap.m.Input</div></div>
+      <pre class="code" id="exCode"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- 09 USE -->
+<section class="scene" id="use">
+  <div class="eyebrow">Scene 09 <b>/ Using it in an app</b></div>
+  <h2>A namespace, a tag, and you're done</h2>
+  <p class="lede">The XML namespace maps to the folder the control lives in. UI5 loads <code>Rating.js</code> on demand and treats it like any <code>sap.m</code> control: bindings, event handlers and all.</p>
+  <div class="grid">
+    <div class="map">
+      <div class="mapline"><span>xmlns:<b class="hl">custom</b>="demo.control"</span><i>➜</i><span>demo/control/</span></div>
+      <div class="mapline"><span>&lt;<b class="hl">custom</b>:Rating/&gt;</span><i>➜</i><span>demo/control/<b class="hl">Rating</b>.js</span></div>
+      <div class="mapline"><span>"demo" in resourceroots</span><i>➜</i><span>./webapp</span></div>
+      <div class="tree" style="margin-top:8px">webapp/
+├─ Component.js
+├─ manifest.json      <span>"sap.app": { "id": "demo" }</span>
+├─ <b>control/</b>
+│  └─ <b>Rating.js</b>      <span>Control.extend("demo.control.Rating")</span>
+├─ css/style.css      <span>.demoRating span { … }</span>
+├─ controller/Main.controller.js
+└─ view/Main.view.xml</div>
+    </div>
+    <div style="display:grid; gap:14px; min-width:0">
+      <div><div class="code-title"><span class="tag k-meta">xml</span> view/Main.view.xml</div><pre class="code" id="useXml"></pre></div>
+      <div><div class="code-title"><span class="tag k-ctrl">js</span> controller/Main.controller.js</div><pre class="code" id="useCtrl"></pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 RULES -->
+<section class="scene" id="rules">
+  <div class="eyebrow">Scene 10 <b>/ Checklist</b></div>
+  <h2>Rules to take back to your desk</h2>
+  <div class="rules">
+    <div class="panel do">
+      <h3>Do</h3>
+      <ul>
+        <li><div>Use <code>apiVersion: 2</code> renderers<span>Faster, and UI5 patches the existing DOM instead of replacing it.</span></div></li>
+        <li><div>Pass the control to the root <code>openStart("div", oControl)</code><span>Writes the ID and <code>data-sap-ui</code> so events, focus and re-rendering work.</span></div></li>
+        <li><div>Change state only through generated setters<span>They validate types, update bindings and invalidate for you.</span></div></li>
+        <li><div>Return <code>this</code> from overridden setters<span>Keeps method chaining working like every other control.</span></div></li>
+        <li><div>Use hidden aggregations for internal children<span>They're destroyed with your control, so nothing leaks.</span></div></li>
+        <li><div>Clean up in <code>exit</code><span>Timers, global listeners, and objects you created that aren't aggregated.</span></div></li>
+        <li><div>Prefix CSS classes and private members<span><code>.demoRating</code>, <code>this._bTouched</code>. Add ARIA roles in the renderer.</span></div></li>
+      </ul>
+    </div>
+    <div class="panel dont">
+      <h3>Don't</h3>
+      <ul>
+        <li><div>Use <code>oRm.write()</code> string rendering<span>It's deprecated and blocks DOM patching.</span></div></li>
+        <li><div>Change properties inside the renderer<span>The renderer reads state. Writing state during render triggers more renders.</span></div></li>
+        <li><div>Keep DOM references across renders<span>The DOM may be replaced. Look it up with <code>getDomRef()</code> in <code>onAfterRendering</code>.</span></div></li>
+        <li><div>Suppress invalidation without updating the DOM yourself<span>You get stale UI, as you saw in the live demo.</span></div></li>
+        <li><div>Write HTML for child controls by hand<span>Call <code>oRm.renderControl(child)</code> so the child keeps its own lifecycle.</span></div></li>
+        <li><div>Rely on global names<span>Load dependencies through <code>sap.ui.define</code> and use the returned modules.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="wrap"><div class="foot"><span>Custom Controls in SAPUI5 · team session</span><span>Use ← and → to move between scenes</span></div></footer>
+
+<script type="text/plain" id="src-anatomy">
+sap.ui.define([
+  "sap/ui/core/Control"
+], function (Control) {
+  "use strict";
+
+  return Control.extend("demo.control.Rating", {
+    metadata: {
+      properties: {
+        value:    { type: "int", defaultValue: 0 },
+        maxValue: { type: "int", defaultValue: 5 }
+      },
+      events: {
+        change: { parameters: { value: { type: "int" } } }
+      }
+    },
+
+    init: function () {
+      // runs once, right after the constructor
+      this._bTouched = false;
+    },
+
+    ontap: function (oEvent) {
+      var iValue = parseInt(oEvent.target.dataset.value, 10);
+      if (!iValue) { return; }
+      this._bTouched = true;
+      this.setValue(iValue);           // invalidates -> re-render
+      this.fireChange({ value: iValue });
+    },
+
+    renderer: {
+      apiVersion: 2,
+      render: function (oRm, oControl) {
+        oRm.openStart("div", oControl);
+        oRm.class("demoRating");
+        oRm.openEnd();
+        for (var i = 1; i <= oControl.getMaxValue(); i++) {
+          oRm.openStart("span");
+          oRm.class(i <= oControl.getValue() ? "on" : "off");
+          oRm.attr("data-value", i);
+          oRm.openEnd();
+          oRm.text("★");
+          oRm.close("span");
+        }
+        oRm.close("div");
+      }
+    }
+  });
+});
+</script>
+
+<script type="text/plain" id="src-render">
+render: function (oRm, oControl) {
+  oRm.openStart("div", oControl);
+  oRm.class("demoRating");
+  oRm.openEnd();
+  for (var i = 1; i <= oControl.getMaxValue(); i++) {
+    oRm.openStart("span");
+    oRm.class(i <= oControl.getValue() ? "on" : "off");
+    oRm.attr("data-value", i);
+    oRm.openEnd();
+    oRm.text("★");
+    oRm.close("span");
+  }
+  oRm.close("div");
+}
+</script>
+
+<script type="text/plain" id="src-ext">
+sap.ui.define([
+  "sap/m/Button",
+  "sap/m/ButtonRenderer"
+], function (Button, ButtonRenderer) {
+  "use strict";
+
+  return Button.extend("demo.control.HoverButton", {
+    metadata: {
+      events: {
+        hover: {}
+      }
+    },
+
+    onmouseover: function () {
+      this.fireHover();
+    },
+
+    renderer: ButtonRenderer   // reuse the parent's look
+  });
+});
+</script>
+
+<script type="text/plain" id="src-comp">
+return Control.extend("demo.control.LabeledInput", {
+  metadata: {
+    properties: {
+      label: { type: "string", defaultValue: "" }
+    },
+    aggregations: {
+      _label: { type: "sap.m.Label", multiple: false, visibility: "hidden" },
+      _input: { type: "sap.m.Input", multiple: false, visibility: "hidden" }
+    }
+  },
+
+  init: function () {
+    this.setAggregation("_label", new Label());
+    this.setAggregation("_input", new Input());
+  },
+
+  setLabel: function (sText) {
+    this.setProperty("label", sText);
+    this.getAggregation("_label").setText(sText);
+    return this;
+  },
+
+  renderer: {
+    apiVersion: 2,
+    render: function (oRm, oControl) {
+      oRm.openStart("div", oControl).class("demoLabeledInput").openEnd();
+      oRm.renderControl(oControl.getAggregation("_label"));
+      oRm.renderControl(oControl.getAggregation("_input"));
+      oRm.close("div");
+    }
+  }
+});
+</script>
+
+<script type="text/plain" id="src-xml">
+<mvc:View
+  controllerName="demo.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:custom="demo.control">
+  <Panel headerText="Rate this session">
+    <custom:Rating
+      value="{/score}"
+      maxValue="5"
+      change=".onRatingChange" />
+  </Panel>
+</mvc:View>
+</script>
+
+<script type="text/plain" id="src-ctrl">
+onRatingChange: function (oEvent) {
+  var iValue = oEvent.getParameter("value");
+  MessageToast.show("You rated " + iValue + " stars");
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- tiny syntax highlighter ---------- */
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function hlJS(s) {
+    var re = /(\/\/.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|\b(function|return|var|if|for|this|true|false|new)\b|\b(\d+)\b|(\.)([A-Za-z_$][\w$]*)(?=\s*\()|\b([A-Za-z_$][\w$]*)(?=\s*:(?!:))/g;
+    var out = "", last = 0, m;
+    while ((m = re.exec(s))) {
+      out += esc(s.slice(last, m.index));
+      if (m[1]) out += '<span class="t-com">' + esc(m[1]) + "</span>";
+      else if (m[2]) out += '<span class="t-str">' + esc(m[2]) + "</span>";
+      else if (m[3]) out += '<span class="t-kw">' + m[3] + "</span>";
+      else if (m[4]) out += '<span class="t-num">' + m[4] + "</span>";
+      else if (m[6]) out += '.<span class="t-fn">' + m[6] + "</span>";
+      else if (m[7]) out += '<span class="t-key">' + m[7] + "</span>";
+      last = re.lastIndex;
+    }
+    return out + esc(s.slice(last));
+  }
+  function hlXML(s) {
+    var e = esc(s);
+    e = e.replace(/([\w:.-]+)="([^"]*)"/g, '<span class="t-attr">$1</span>=<span class="t-str">"$2"</span>');
+    e = e.replace(/(&lt;\/?)([\w:.]+)/g, '$1<span class="t-tag">$2</span>');
+    return e;
+  }
+  function srcOf(id) { return $(id).textContent.replace(/^\n+/, "").replace(/\s+$/, ""); }
+  function renderCode(el, src, lang) {
+    var lines = src.split("\n");
+    el.innerHTML = lines.map(function (l, i) {
+      return '<span class="ln" data-l="' + i + '"><span class="lno">' + (i + 1) + "</span>" + ((lang === "xml" ? hlXML(l) : hlJS(l)) || " ") + "</span>";
+    }).join("");
+    return lines;
+  }
+  function highlight(el, from, to, color) {
+    el.classList.add("focus");
+    if (color) el.style.setProperty("--hl", color);
+    var first = null;
+    el.querySelectorAll(".ln").forEach(function (ln) {
+      var i = +ln.dataset.l, on = i >= from && i <= to;
+      ln.classList.toggle("hi", on);
+      if (on && !first) first = ln;
+    });
+    if (first) {
+      var top = first.offsetTop - 20;
+      if (el.scrollHeight > el.clientHeight) el.scrollTo({ top: top, behavior: reduce ? "auto" : "smooth" });
+    }
+  }
+
+  /* ---------- nav, progress, keyboard ---------- */
+  var scenes = Array.prototype.slice.call(document.querySelectorAll(".scene"));
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll("#nav a"));
+  function currentIndex() {
+    var y = window.scrollY + 120, idx = 0;
+    scenes.forEach(function (s, i) { if (s.offsetTop <= y) idx = i; });
+    return idx;
+  }
+  function onScroll() {
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    $("progress").style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
+    var id = scenes[currentIndex()].id;
+    navLinks.forEach(function (a) {
+      var on = a.getAttribute("href") === "#" + id;
+      if (on && !a.classList.contains("on")) a.scrollIntoView({ block: "nearest", inline: "nearest" });
+      a.classList.toggle("on", on);
+    });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+  document.addEventListener("keydown", function (e) {
+    var t = e.target.tagName;
+    if (t === "INPUT" || t === "SELECT" || t === "TEXTAREA" || e.altKey || e.metaKey || e.ctrlKey) return;
+    var i = currentIndex();
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); scenes[Math.min(i + 1, scenes.length - 1)].scrollIntoView(); }
+    if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); scenes[Math.max(i - 1, 0)].scrollIntoView(); }
+  });
+  if (location.hash && $(location.hash.slice(1))) $(location.hash.slice(1)).scrollIntoView();
+
+  /* ---------- 02 ladder ---------- */
+  var rungs = document.querySelectorAll("#ladder .rung");
+  var traceTimer = null;
+  $("traceBtn").addEventListener("click", function () {
+    clearInterval(traceTimer);
+    rungs.forEach(function (r) { r.classList.remove("lit"); });
+    var i = 0;
+    traceTimer = setInterval(function () {
+      if (i >= rungs.length) { clearInterval(traceTimer); return; }
+      rungs[i].classList.add("lit"); i++;
+    }, reduce ? 1 : 420);
+  });
+  rungs.forEach(function (r) { r.classList.add("lit"); });
+
+  /* ---------- 03 anatomy ---------- */
+  var anaEl = $("anaCode");
+  var anaLines = renderCode(anaEl, srcOf("src-anatomy"), "js");
+  function findLine(re) { for (var i = 0; i < anaLines.length; i++) if (re.test(anaLines[i])) return i; return 0; }
+  function blockEnd(start) { for (var i = start + 1; i < anaLines.length; i++) if (anaLines[i].trim() === "") return i - 1; return anaLines.length - 1; }
+  var rEnd = findLine(/^\s{2}\}\);/);
+  var segRanges = {
+    module: [0, findLine(/Control\.extend/), "var(--muted)"],
+    metadata: [findLine(/metadata:/), blockEnd(findLine(/metadata:/)), "var(--c-meta)"],
+    init: [findLine(/init:/), blockEnd(findLine(/init:/)), "var(--c-hook)"],
+    ontap: [findLine(/ontap:/), blockEnd(findLine(/ontap:/)), "var(--c-event)"],
+    renderer: [findLine(/renderer:/), rEnd - 1, "var(--c-render)"]
+  };
+  var segBtns = Array.prototype.slice.call(document.querySelectorAll(".seg"));
+  var segOrder = segBtns.map(function (b) { return b.dataset.seg; });
+  var segIdx = 1, anaTimer = null;
+  function showSeg(key) {
+    segBtns.forEach(function (b) { b.classList.toggle("on", b.dataset.seg === key); });
+    var r = segRanges[key];
+    highlight(anaEl, r[0], r[1], r[2]);
+    segIdx = segOrder.indexOf(key);
+  }
+  segBtns.forEach(function (b) {
+    b.addEventListener("click", function () { $("anaAuto").checked = false; stopAna(); showSeg(b.dataset.seg); });
+  });
+  function startAna() { stopAna(); if (reduce) return; anaTimer = setInterval(function () { showSeg(segOrder[(segIdx + 1) % segOrder.length]); }, 3200); }
+  function stopAna() { clearInterval(anaTimer); }
+  $("anaAuto").addEventListener("change", function (e) { e.target.checked ? startAna() : stopAna(); });
+  showSeg("metadata");
+  startAna();
+
+  /* ---------- 04 metadata → api ---------- */
+  var API = {
+    prop: {
+      code: 'properties: {\n  value: {\n    type: "int",\n    defaultValue: 0\n  }\n}',
+      methods: [["getValue()", "returns the current value"], ["setValue(iValue)", "validates type, invalidates"], ["bindValue(oBindingInfo)", "connect to a model path"], ["unbindValue()", "remove the binding"]],
+      color: "var(--c-meta)",
+      note: "Override setValue if you need custom logic, but call this.setProperty(\"value\", v) inside it and return this."
+    },
+    agg: {
+      code: 'aggregations: {\n  items: {\n    type: "sap.m.Text",\n    multiple: true\n  }\n}',
+      methods: [["getItems()", "array of children"], ["addItem(oItem)", ""], ["insertItem(oItem, iIndex)", ""], ["removeItem(vItem)", ""], ["removeAllItems()", ""], ["indexOfItem(oItem)", ""], ["destroyItems()", ""], ["bindItems(oBindingInfo)", "list binding with a template"]],
+      color: "var(--c-render)",
+      note: "With multiple: false you get getX / setX / destroyX instead. Hidden aggregations (visibility: \"hidden\") get no public methods; use getAggregation / setAggregation."
+    },
+    assoc: {
+      code: 'associations: {\n  ariaLabelledBy: {\n    type: "sap.ui.core.Control",\n    multiple: true\n  }\n}',
+      methods: [["getAriaLabelledBy()", "returns IDs, not objects"], ["addAriaLabelledBy(vId)", ""], ["removeAriaLabelledBy(vId)", ""], ["removeAllAriaLabelledBy()", ""]],
+      color: "var(--c-hook)",
+      note: "Associations point to controls owned by someone else. Destroying your control never destroys them."
+    },
+    event: {
+      code: 'events: {\n  change: {\n    parameters: {\n      value: { type: "int" }\n    }\n  }\n}',
+      methods: [["attachChange(fn, oListener)", "subscribe"], ["detachChange(fn, oListener)", "unsubscribe"], ["fireChange({ value: 4 })", "call from your control"]],
+      color: "var(--c-event)",
+      note: "In XML you simply write change=\".onRatingChange\". Handlers read parameters with oEvent.getParameter(\"value\")."
+    }
+  };
+  function showApi(k) {
+    var d = API[k];
+    document.querySelectorAll(".kind").forEach(function (b) { b.classList.toggle("on", b.dataset.k === k); });
+    renderCode($("apiCode"), d.code, "js");
+    $("apiMethods").innerHTML = d.methods.map(function (m, i) {
+      return '<div class="m" style="border-left-color:' + d.color + "; animation-delay:" + (i * 90) + 'ms">' + esc(m[0]) + (m[1] ? "<small>" + esc(m[1]) + "</small>" : "") + "</div>";
+    }).join("");
+    $("apiNote").textContent = d.note;
+  }
+  document.querySelectorAll(".kind").forEach(function (b) { b.addEventListener("click", function () { showApi(b.dataset.k); }); });
+  showApi("prop");
+
+  /* ---------- 05 lifecycle ---------- */
+  var KC = { api: "var(--muted)", hook: "var(--c-hook)", render: "var(--c-render)", event: "var(--c-event)" };
+  var LC = [
+    { k: "api", t: "constructor", s: 'var oRating = new Rating({ value: 3 });', d: "The control is created, either by your code or by the XML view parser when it reaches <custom:Rating>." },
+    { k: "hook", t: "init()", s: "init: function () {\n  this._bTouched = false;\n}", d: "Called once, right after construction and before any settings are applied. Create internal objects and private state here. Constructor properties are not set yet." },
+    { k: "api", t: "applySettings", s: "this.setValue(3);\nthis.bindProperty(\"value\", \"/score\");", d: "UI5 applies the settings object or XML attributes through your setters. Bindings like value=\"{/score}\" are attached now." },
+    { k: "api", t: "placeAt / add to parent", s: 'oPanel.addContent(oRating);   // or oRating.placeAt("content")', d: "The control joins the UI tree, either in a UIArea or in a parent's aggregation. Nothing renders until it has a place in the page." },
+    { k: "hook", t: "onBeforeRendering()", s: "onBeforeRendering: function () {\n  // detach handlers bound to the old DOM\n}", d: "Runs before every render. A good place to remove DOM listeners and timers tied to the old DOM." },
+    { k: "render", t: "renderer.render()", s: "render: function (oRm, oControl) {\n  oRm.openStart(\"div\", oControl) …\n}", d: "The renderer turns the current property values into DOM using the RenderManager. It reads state and never changes it." },
+    { k: "hook", t: "onAfterRendering()", s: "onAfterRendering: function () {\n  var oDom = this.getDomRef();\n}", d: "The DOM now exists. Measure it, set focus, or attach third-party widgets. Runs after every render." },
+    { k: "event", t: "user taps a star", s: "ontap → this.setValue(4) → invalidate()\n      → this.fireChange({ value: 4 })", d: "A setter changes a property and invalidates the control. UI5 batches invalidations and re-renders asynchronously, starting again at onBeforeRendering." },
+    { k: "hook", t: "exit()", s: "exit: function () {\n  clearTimeout(this._iTimer);\n}", d: "Called on destroy(). Release what you created in init: non-aggregated objects, global handlers, timers. Aggregated children are destroyed for you." }
+  ];
+  var SEQ = [0, 1, 2, 3, 4, 5, 6, 7, 4, 5, 6, 8];
+  var lcPos = 0, lcTimer = null;
+  $("lcTrack").innerHTML = LC.map(function (s, i) {
+    return '<div class="step" data-i="' + i + '" style="--kc:' + KC[s.k] + '"><button type="button">' + esc(s.t) + "</button></div>";
+  }).join("");
+  var lcSteps = Array.prototype.slice.call(document.querySelectorAll("#lcTrack .step"));
+  lcSteps.forEach(function (st) {
+    st.querySelector("button").addEventListener("click", function () {
+      stopLc(); var i = +st.dataset.i; lcPos = SEQ.indexOf(i); showLc();
+    });
+  });
+  function showLc() {
+    var cur = SEQ[lcPos], seen = SEQ.slice(0, lcPos + 1);
+    lcSteps.forEach(function (st, i) {
+      st.classList.toggle("now", i === cur);
+      st.classList.toggle("done", seen.indexOf(i) >= 0 && i !== cur);
+    });
+    $("lcLoop").hidden = !(lcPos >= 8 && lcPos <= 10);
+    var s = LC[cur];
+    var tagName = { api: "framework", hook: "hook", render: "renderer", event: "interaction" }[s.k];
+    $("lcDetail").innerHTML = '<div class="fade"><h3>' + esc(s.t) + ' <span class="tag k-' + s.k + '">' + tagName + "</span></h3></div>" +
+      '<p class="fade" style="animation-delay:.08s">' + esc(s.d) + "</p>" +
+      '<pre class="code fade" style="animation-delay:.14s" id="lcCode"></pre>';
+    renderCode($("lcCode"), s.s, "js");
+  }
+  function stopLc() { clearInterval(lcTimer); lcTimer = null; $("lcPlay").textContent = "▶ Play"; }
+  $("lcPlay").addEventListener("click", function () {
+    if (lcTimer) { stopLc(); return; }
+    if (lcPos >= SEQ.length - 1) lcPos = -1;
+    $("lcPlay").textContent = "❚❚ Pause";
+    var tick = function () { if (lcPos >= SEQ.length - 1) { stopLc(); return; } lcPos++; showLc(); };
+    tick();
+    lcTimer = setInterval(tick, 2600);
+  });
+  $("lcNext").addEventListener("click", function () { stopLc(); lcPos = Math.min(lcPos + 1, SEQ.length - 1); showLc(); });
+  $("lcPrev").addEventListener("click", function () { stopLc(); lcPos = Math.max(lcPos - 1, 0); showLc(); });
+  showLc();
+
+  /* ---------- 06 renderer step-through ---------- */
+  var rEl = $("rCode");
+  renderCode(rEl, srcOf("src-render"), "js");
+  var VAL = 3, MAX = 5;
+  function t(s) { return '<span class="d-tag">' + esc(s) + "</span>"; }
+  function a(n, v) { return ' <span class="d-attr">' + n + '</span>="' + esc(v) + '"'; }
+  var R = [
+    { l: [1, 1], h: t("<div") + a("id", "__rating0") + a("data-sap-ui", "__rating0"), n: "<b>openStart(\"div\", oControl)</b> opens the root tag. Passing the control writes its ID and the <code>data-sap-ui</code> marker, which UI5 uses to find the control from a DOM event." },
+    { l: [2, 2], h: a("class", "demoRating"), n: "<b>class()</b> adds a CSS class. Prefix classes with your namespace so they never clash with UI5 themes." },
+    { l: [3, 3], h: t(">") + "\n", n: "<b>openEnd()</b> closes the opening tag. Attributes and classes must come before this call." }
+  ];
+  for (var i = 1; i <= MAX; i++) {
+    R.push({
+      l: [4, 10], star: i,
+      h: "  " + t("<span") + a("class", i <= VAL ? "on" : "off") + a("data-value", String(i)) + t(">") + "★" + t("</span>") + "\n",
+      n: "Loop <b>i = " + i + "</b>: " + (i <= VAL ? "i ≤ getValue(), so the star gets class <code>on</code>." : "i > getValue(), so the star gets class <code>off</code>.") + " <code>text()</code> escapes content for you."
+    });
+  }
+  R.push({ l: [12, 12], h: t("</div>"), n: "<b>close(\"div\")</b> ends the root. Done. On the next render, UI5 compares this output with the live DOM and patches only what changed." });
+  var rPos = -1, rTimer = null;
+  function showR() {
+    if (rPos < 0) {
+      rEl.classList.remove("focus");
+      $("rDom").innerHTML = '<span style="color:var(--muted)">&lt;!-- nothing rendered yet --&gt;</span>';
+      $("rPrev").innerHTML = "";
+      $("rNote").innerHTML = "Press <b>Next call</b> to run the first RenderManager call.";
+      $("rStep").disabled = false;
+      return;
+    }
+    var st = R[rPos];
+    highlight(rEl, st.l[0], st.l[1]);
+    $("rDom").innerHTML = R.slice(0, rPos + 1).map(function (x, i) { return i === rPos ? '<span class="new">' + x.h + "</span>" : x.h; }).join("");
+    var stars = "";
+    for (var j = 1; j <= MAX; j++) {
+      var built = R.slice(0, rPos + 1).some(function (x) { return x.star === j; });
+      if (built) stars += '<span class="' + (j <= VAL ? "on" : "") + '">★</span>';
+    }
+    $("rPrev").innerHTML = stars;
+    $("rNote").innerHTML = st.n;
+    $("rStep").disabled = rPos >= R.length - 1;
+  }
+  function stopR() { clearInterval(rTimer); rTimer = null; $("rAuto").textContent = "▶ Auto"; }
+  $("rStep").addEventListener("click", function () { stopR(); if (rPos < R.length - 1) { rPos++; showR(); } });
+  $("rReset").addEventListener("click", function () { stopR(); rPos = -1; showR(); });
+  $("rAuto").addEventListener("click", function () {
+    if (rTimer) { stopR(); return; }
+    if (rPos >= R.length - 1) rPos = -1;
+    $("rAuto").textContent = "❚❚ Pause";
+    rTimer = setInterval(function () { if (rPos >= R.length - 1) { stopR(); return; } rPos++; showR(); }, 1500);
+  });
+  rPos = 2; showR();
+
+  /* ---------- 07 live demo: a miniature UI5 runtime ---------- */
+  var D = { alive: false, value: 3, max: 5, rendered: { value: 3, max: 5 }, dirty: false, renders: 0, fast: true };
+  var logEl = $("dLog"), host = $("dHost");
+  var queue = Promise.resolve();
+  function task(fn) { queue = queue.then(function () { return new Promise(function (res) { fn(); setTimeout(res, D.fast || reduce ? 0 : 230); }); }); }
+  function log(kind, label, msg, sep) {
+    task(function () {
+      var e = document.createElement("div");
+      e.className = "e" + (sep ? " sep" : "");
+      e.innerHTML = '<span class="tag k-' + kind + '">' + label + '</span><span class="msg">' + msg + "</span>";
+      logEl.appendChild(e);
+      while (logEl.children.length > 80) logEl.removeChild(logEl.firstChild);
+      logEl.scrollTop = logEl.scrollHeight;
+    });
+  }
+  function domString(v, m) {
+    var s = '<div id="__rating0" data-sap-ui="__rating0" class="demoRating">\n';
+    for (var i = 1; i <= m; i++) s += '  <span class="' + (i <= v ? "on" : "off") + '" data-value="' + i + '">★</span>\n';
+    return s + "</div>";
+  }
+  function paint() {
+    D.rendered = { value: D.value, max: D.max };
+    var s = "";
+    for (var i = 1; i <= D.max; i++) s += '<span class="' + (i <= D.value ? "on" : "") + '" data-value="' + i + '" role="button" tabindex="0" aria-label="' + i + ' stars">★</span>';
+    host.innerHTML = '<div class="stars">' + s + "</div>";
+    host.classList.remove("flash"); void host.offsetWidth; host.classList.add("flash");
+    $("dDom").textContent = domString(D.value, D.max);
+  }
+  function markStale() {
+    var stale = D.alive && (D.rendered.value !== D.value || D.rendered.max !== D.max);
+    var b = host.querySelector(".stale");
+    if (stale && !b) { b = document.createElement("span"); b.className = "stale"; b.textContent = "DOM is stale"; host.appendChild(b); }
+    if (!stale && b) b.remove();
+  }
+  function syncInspector() { $("dValOut").textContent = D.value; $("dMax").value = String(D.max); }
+  function renderPass() {
+    D.renders++;
+    log("hook", "hook", "onBeforeRendering()");
+    log("render", "render", "renderer.render(oRm, oControl) · pass #" + D.renders);
+    task(function () { paint(); markStale(); });
+    log("hook", "hook", "onAfterRendering() · getDomRef() ready");
+  }
+  function invalidate() {
+    if (D.dirty) { log("api", "api", "invalidate() · already queued, renders are batched"); return; }
+    D.dirty = true;
+    log("api", "api", "invalidate() · re-render scheduled");
+    task(function () {
+      D.dirty = false;
+      setTimeout(function () { renderPass(); }, 0);
+    });
+  }
+  function setProp(name, v) {
+    var setter = name === "value" ? "setValue" : "setMaxValue";
+    D[name === "value" ? "value" : "max"] = v;
+    syncInspector();
+    if ($("dSuppress").checked && name === "value") {
+      log("api", "api", setter + "(" + v + ")");
+      log("warn", "warn", 'setProperty("value", ' + v + ", true) · invalidation suppressed");
+      task(markStale);
+      return;
+    }
+    log("api", "api", setter + "(" + v + ")");
+    invalidate();
+  }
+  function create() {
+    D.alive = true; D.renders = 0; D.value = 3; D.max = +$("dMax").value || 5;
+    syncInspector();
+    log("api", "api", "new Rating({ value: 3, maxValue: " + D.max + " })", logEl.children.length > 0);
+    log("hook", "hook", "init()");
+    log("api", "api", "applySettings · setValue(3), setMaxValue(" + D.max + ")");
+    log("api", "api", 'placeAt("content")');
+    renderPass();
+    task(function () { D.fast = false; $("dToggle").textContent = "destroy()"; });
+  }
+  function destroy() {
+    D.alive = false;
+    log("api", "api", "destroy()", true);
+    log("hook", "hook", "exit() · release timers and handlers");
+    task(function () {
+      host.innerHTML = '<span class="gone">control destroyed · DOM removed</span>';
+      $("dDom").textContent = "<!-- nothing -->";
+      $("dToggle").textContent = "Create control";
+    });
+  }
+  function toast(msg) {
+    var t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+    host.appendChild(t); setTimeout(function () { t.remove(); }, 2300);
+  }
+  function tapStar(v) {
+    if (!D.alive) return;
+    log("event", "dom", "tap on span[data-value=" + v + "] → Rating.ontap()", true);
+    setProp("value", v);
+    log("event", "event", "fireChange({ value: " + v + " })");
+    log("ctrl", "ctrl", "Main.controller · onRatingChange → MessageToast");
+    task(function () { toast("You rated " + v + " stars"); });
+  }
+  host.addEventListener("click", function (e) { var s = e.target.closest("[data-value]"); if (s) tapStar(+s.dataset.value); });
+  host.addEventListener("keydown", function (e) { var s = e.target.closest("[data-value]"); if (s && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); tapStar(+s.dataset.value); } });
+  $("dPlus").addEventListener("click", function () { if (D.alive && D.value < D.max) { log("api", "app", "inspector change", true); setProp("value", D.value + 1); } });
+  $("dMinus").addEventListener("click", function () { if (D.alive && D.value > 0) { log("api", "app", "inspector change", true); setProp("value", D.value - 1); } });
+  $("dMax").addEventListener("change", function (e) {
+    if (!D.alive) return;
+    var m = +e.target.value;
+    log("api", "app", "inspector change", true);
+    if (D.value > m) { D.value = m; }
+    setProp("maxValue", m);
+  });
+  $("dSuppress").addEventListener("change", function (e) {
+    if (!e.target.checked && D.alive && (D.rendered.value !== D.value)) {
+      log("api", "app", "suppression turned off", true);
+      invalidate();
+    }
+  });
+  $("dToggle").addEventListener("click", function () { D.alive ? destroy() : create(); });
+  $("dClear").addEventListener("click", function () { logEl.innerHTML = ""; });
+  create();
+
+  /* ---------- 08 extend / compose ---------- */
+  var exSrc = { ext: srcOf("src-ext"), comp: srcOf("src-comp") };
+  function showEx(k) {
+    document.querySelectorAll("#exTabs .tab").forEach(function (b) { b.classList.toggle("on", b.dataset.t === k); });
+    $("vExt").hidden = k !== "ext"; $("vComp").hidden = k !== "comp";
+    renderCode($("exCode"), exSrc[k], "js");
+  }
+  document.querySelectorAll("#exTabs .tab").forEach(function (b) { b.addEventListener("click", function () { showEx(b.dataset.t); }); });
+  showEx("ext");
+
+  /* ---------- 09 use ---------- */
+  renderCode($("useXml"), srcOf("src-xml"), "xml");
+  renderCode($("useCtrl"), srcOf("src-ctrl"), "js");
+})();
+</script>
+
+</body></html>
